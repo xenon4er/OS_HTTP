@@ -1,7 +1,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <stdio.h>
-
+#include <memory.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -48,50 +48,70 @@ void *threadwork(void *data)
 
     printf("threadwork\n");
 
-    char *buf;
-    char *filename = "readme.txt";
+    char buf[1024];
+    char filename[1024];
     FILE *file;
 
     struct TaskManager *manager = (struct TaskManager *)data;
     printf("sock_id = %i\n",manager->sock_id);
-    printf("before while\n");
+    //printf("before while\n");
 
-    //while(1)
+    while(1)
     {
-        printf("1");
+        printf("1\n");
 
         int sock = accept(manager->sock_id, NULL, NULL);
-            if(sock < 0)
-            {
-                perror("accept");
-                exit(3);
-            }
+        if(sock < 0)
+        {
+            perror("accept");
+            exit(1);
+        }
 
-            file = fopen(filename, "r");
+
             char c;
-            char tmp;
             int i = 0;
-            while((c = fgetc(file)) != EOF)
+
+            recv(sock, filename, 1024, 0);
+            printf("%s\n",filename);
+
+            printf("before while\n");
+            if((file = fopen(filename, "r")) == NULL)
             {
-                //int bytes_read = recv(sock, buf, 1024, 0);
+                memcpy(buf, "file not found\n",1024);
+                send(sock, buf, sizeof(buf),0);
+                close(sock);
+                //exit(2);
+            }
+            else
+            {
+                while((c = fgetc(file)) != EOF)
+                {
+                    buf[i] = c;
+                    i++;
 
-                //if(bytes_read <= 0) break;
-                //buf = fgetc(file);
-                buf[i] = c;
-                i++;
+                    if((i == 1023))
+                    {
 
-                if((i == 1024))
+                        printf("send\n");
+                        send(sock, buf, sizeof(buf), 0);
+                        sleep(10);
+                        printf("%i\n",i);
+                        i=0;
+                        memset(buf,0,sizeof(buf));
+
+                    }
+
+
+                }
+                if(i!=0)
                 {
                     send(sock, buf, sizeof(buf), 0);
-                    i=0;
-                    printf("%i\n",i);
-                    buf = "";
                 }
+                fclose(file);
 
+
+                close(sock);
             }
-            send(sock, buf, sizeof(buf), 0);
-            fclose(file);
-            close(sock);
     }
     printf("qqqqqqqqqqqqqqqqqqqqqqqqqqqqqq");
 
@@ -122,17 +142,14 @@ void InitManager(struct TaskManager *manager)
 
     listen(manager->sock_id, manager->num_of_threads);
 
-    //manager->threads = pthread_t[manager->num_of_threads];
-    //manager.finish = 0;
     int t;
     printf("%i\n",manager->num_of_threads);
     for (t = 0; t < manager->num_of_threads; t++)
     {
         printf("%i\n",t);
         manager->threads = (pthread_t *)calloc(t+1,sizeof(pthread_t));
-
         pthread_create(&manager->threads[t], NULL, threadwork, (void *) manager);
-        //pthread_join(manager->threads[t], NULL);
+
     }
 
     printf("init complited\n");

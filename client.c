@@ -1,16 +1,17 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <memory.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 
 
-int main()
+int main(int agc, char** argv)
 {
     int sock;
-    char message[] = "";
+    //char message[] = "";
     char buf[1024];
     //int message = 44;
 
@@ -32,10 +33,10 @@ int main()
         perror("connect");
         exit(2);
     }
+    printf("\nconnect open\n");
 
-
-
-
+    memcpy(buf,argv[1],1024);
+    send(sock,buf,sizeof(buf),0);
     //send(sock, message, sizeof(message), 0);
     //printf("send\n");
     while (1)
@@ -46,6 +47,6 @@ int main()
         //printf("recv\n");
         printf("%s",buf);
     }
-    printf("\nend\n");
+    printf("end\n");
     close(sock);
 }
