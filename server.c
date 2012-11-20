@@ -46,10 +46,10 @@ struct TaskManager
 void *threadwork(void *data)
 {
 
-    printf("threadwork\n");
+    //printf("threadwork\n");
 
     char buf[1024];
-    char filename[1024];
+    char* filename;
     FILE *file;
 
     struct TaskManager *manager = (struct TaskManager *)data;
@@ -58,7 +58,7 @@ void *threadwork(void *data)
 
     while(1)
     {
-        printf("1\n");
+        //printf("1\n");
 
         int sock = accept(manager->sock_id, NULL, NULL);
         if(sock < 0)
@@ -66,20 +66,32 @@ void *threadwork(void *data)
             perror("accept");
             exit(1);
         }
-
+         printf("%i\n",sock);
 
             char c;
             int i = 0;
+            memset(buf,0,1024);
 
-            recv(sock, filename, 1024, 0);
-            printf("%s\n",filename);
+            filename = (char*)malloc(12 * sizeof(char));
+            printf("memset filename\n");
+
+            read(sock, buf, 1024);
+            printf("%s\n",buf);
+
+            strcpy(filename,buf);
+
+            printf("\n%s\n",filename);
+            printf("%lu\n",sizeof(buf));
+            printf("%lu\n",sizeof(filename));
+
 
             printf("before while\n");
             if((file = fopen(filename, "r")) == NULL)
             {
-                memcpy(buf, "file not found\n",1024);
+                memcpy(buf, "file not found\n",sizeof(buf));
                 send(sock, buf, sizeof(buf),0);
                 close(sock);
+                free(filename);
                 //exit(2);
             }
             else
@@ -94,8 +106,8 @@ void *threadwork(void *data)
 
                         printf("send\n");
                         send(sock, buf, sizeof(buf), 0);
-                        sleep(10);
-                        printf("%i\n",i);
+                        //sleep(10);
+                        //printf("%i\n",i);
                         i=0;
                         memset(buf,0,sizeof(buf));
 
@@ -111,9 +123,9 @@ void *threadwork(void *data)
 
 
                 close(sock);
+                printf("sock close\n");
             }
     }
-    printf("qqqqqqqqqqqqqqqqqqqqqqqqqqqqqq");
 
 }
 
@@ -131,7 +143,7 @@ void InitManager(struct TaskManager *manager)
     struct sockaddr_in addr;
     addr.sin_family = AF_INET;
     addr.sin_port = htons(3420);
-    addr.sin_addr.s_addr = htonl(INADDR_ANY);//((((3 << 8) | 0) << 8) | 0) << 8) | 128;
+    addr.sin_addr.s_addr = (((((3 << 8) | 0) << 8) | 0) << 8) | 127; //htonl(INADDR_ANY);//
 
     if(bind( manager->sock_id, (struct sockaddr *)&addr, sizeof(addr)) < 0)
     {
@@ -143,7 +155,7 @@ void InitManager(struct TaskManager *manager)
     listen(manager->sock_id, manager->num_of_threads);
 
     int t;
-    printf("%i\n",manager->num_of_threads);
+    //printf("%i\n",manager->num_of_threads);
     for (t = 0; t < manager->num_of_threads; t++)
     {
         printf("%i\n",t);
@@ -164,7 +176,13 @@ int main(int argc, char** argv)
    struct TaskManager manager, *man;
    printf("sd\n");
 
-   manager.num_of_threads = 1;//atoi(argv[3]);
+   if(argc < 2)
+   {
+       printf("usage:  ./server num_of_threads\n");
+       return;
+   }
+
+   manager.num_of_threads = atoi(argv[1]);
    printf("sd2\n");
 
    man = &manager;
