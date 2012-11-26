@@ -49,7 +49,7 @@ void *threadwork(void *data)
     //printf("threadwork\n");
 
     char buf[1024];
-    char* filename;
+    char filename[12];
     FILE *file;
 
     struct TaskManager *manager = (struct TaskManager *)data;
@@ -69,33 +69,51 @@ void *threadwork(void *data)
          printf("%i\n",sock);
 
             char c;
-            int i = 0;
+            int i = 5;
             memset(buf,0,1024);
-
-            filename = (char*)malloc(12 * sizeof(char));
+            memset(filename,0,12);
             printf("memset filename\n");
 
-            read(sock, buf, 1024);
-            printf("%s\n",buf);
+            recv(sock, buf, 1024,0);
 
-            strcpy(filename,buf);
+            int j =0;
+            while(buf[i]!=' ')
+            {
+                filename[j] = buf[i];
+                j++;
+                i++;
+            }
+
+            printf("%s\n",buf);
+            //memset(buf,'d',15);
+            //strcpy(filename,buf);
+            memset(buf,0,1024);
 
             printf("\n%s\n",filename);
-            printf("%lu\n",sizeof(buf));
-            printf("%lu\n",sizeof(filename));
+            //printf("%lu\n",sizeof(buf));
+            //printf("%lu\n",sizeof(filename));
 
 
             printf("before while\n");
+
+            memcpy(buf,"HTTP/1.1 200 OK \nContent-Type: text/html; charset=utf-8 \n Connection: close\n\n",1024);
+            send(sock, buf, sizeof(buf),0);
+            //memset(buf,0,1024);
+            //send(sock,buf,1024,0);
+            i=0;
             if((file = fopen(filename, "r")) == NULL)
             {
+                printf("oops!\n",fflush);
+                memset(buf,0,1024);
                 memcpy(buf, "file not found\n",sizeof(buf));
                 send(sock, buf, sizeof(buf),0);
                 close(sock);
-                free(filename);
+
                 //exit(2);
             }
             else
             {
+                memset(buf,0,1024);
                 while((c = fgetc(file)) != EOF)
                 {
                     buf[i] = c;
@@ -125,6 +143,7 @@ void *threadwork(void *data)
                 close(sock);
                 printf("sock close\n");
             }
+            //free(filename);
     }
 
 }

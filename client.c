@@ -18,7 +18,7 @@ int main(int argc, char** argv)
 
     if(argc < 3)
     {
-        printf("usage: ./client xxx.xxx.xxx.xxx filename\n");
+        printf("usage: ./exp xxx.xxx.xxx.xxx filename\n");
         return;
     }
 
@@ -42,7 +42,8 @@ int main(int argc, char** argv)
     printf("%s\n",argv[1]);
 
     memcpy(buf,argv[2],1024);
-    write(sock,buf,sizeof(buf));
+    //memset(buf,'d',1024);
+    send(sock,buf,sizeof(buf),0);
 
     //send(sock, message, sizeof(message), 0);
     //printf("send\n");
